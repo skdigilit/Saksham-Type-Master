@@ -113,6 +113,20 @@ const ENEMY_HIT_PADDING: float = 0.4
 ## Higher numbers = harder game right from the start.
 const ENEMY_MAX_COUNT_INITIAL: int = 2
 
+## Maximum number of heart slots shown in the HUD.
+const PLAYER_MAX_LIVES: int = 3
+
+## How many full hearts the player starts each run with.
+## Must stay between 1 and PLAYER_MAX_LIVES.
+const PLAYER_STARTING_LIVES: int = 1
+
+## Chance that a newly spawned collectible becomes a bonus-life pickup when the player is not at full life.
+## 0.22 means roughly 22% of eligible spawns.
+const LIFE_COLLECTIBLE_CHANCE: float = 0.22
+
+## How many seconds the bonus-life collectible stays on the board before it disappears.
+const LIFE_COLLECTIBLE_DURATION: float = 6.0
+
 ## How many seconds pass before the game adds one more enemy to the maximum allowed.
 ## For example, 30.0 means every 30 seconds the game gets one enemy harder.
 ## Lower numbers = difficulty ramps up faster; higher = longer breathing room.

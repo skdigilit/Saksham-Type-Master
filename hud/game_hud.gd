@@ -40,6 +40,9 @@ const HEART_TOP_GAP: float = 68.0
 const HEART_SLOT_SIZE: Vector2 = Vector2(42.0, 42.0)
 const HEART_SLOT_SPACING: float = 12.0
 const HEART_FLY_SIZE: Vector2 = Vector2(26.0, 26.0)
+const HEART_FLY_DURATION: float = 0.8
+const LIFE_LOSS_POPUP_RISE: float = 34.0
+const LIFE_LOSS_POPUP_DURATION: float = 0.7
 
 
 func _ready() -> void:
@@ -203,14 +206,42 @@ func animate_life_gain(from_position: Vector2, target_life_index: int) -> void:
 	var target_center: Vector2 = get_heart_slot_center(target_life_index)
 	var tween: Tween = create_tween()
 	tween.set_parallel(true)
-	tween.tween_property(flying_heart, "position", target_center - HEART_FLY_SIZE * 0.5, 0.45)\
+	tween.tween_property(flying_heart, "position", target_center - HEART_FLY_SIZE * 0.5, HEART_FLY_DURATION)\
 		.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_IN)
-	tween.tween_property(flying_heart, "scale", Vector2(0.65, 0.65), 0.45)\
+	tween.tween_property(flying_heart, "scale", Vector2(0.65, 0.65), HEART_FLY_DURATION)\
 		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
-	tween.tween_property(flying_heart, "modulate:a", 0.0, 0.45)\
+	tween.tween_property(flying_heart, "modulate:a", 0.0, HEART_FLY_DURATION)\
 		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
 	tween.finished.connect(func() -> void:
 		flying_heart.queue_free()
+	)
+
+
+func animate_life_loss(lost_life_index: int) -> void:
+	if lost_life_index < 0 or lost_life_index >= _heart_slots.size():
+		return
+
+	var popup := _create_hud_label()
+	popup.text = "-1"
+	popup.label_settings = GameTheme.create_label_settings(
+		GameTheme.COLOR_ENEMY,
+		36,
+		GameTheme.COLOR_CIRCLE_OUTLINE,
+		3
+	)
+	popup.size = Vector2(80, 44)
+	popup.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	popup.position = get_heart_slot_center(lost_life_index) + Vector2(-popup.size.x * 0.5, -18.0)
+	add_child(popup)
+
+	var tween: Tween = create_tween()
+	tween.set_parallel(true)
+	tween.tween_property(popup, "position:y", popup.position.y - LIFE_LOSS_POPUP_RISE, LIFE_LOSS_POPUP_DURATION)\
+		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	tween.tween_property(popup, "modulate:a", 0.0, LIFE_LOSS_POPUP_DURATION)\
+		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
+	tween.finished.connect(func() -> void:
+		popup.queue_free()
 	)
 
 
