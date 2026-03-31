@@ -18,6 +18,7 @@ var letter: String = ""
 ## Position within the diamond grid
 var grid_row: int = 0
 var grid_col: int = 0
+var stagger_ratio: Vector2 = Vector2.ZERO
 
 ## Current visual state
 var cell_state: CellState = CellState.NORMAL
@@ -60,6 +61,7 @@ var _settings_life_collectible: LabelSettings = null
 var _settings_empty: LabelSettings = null
 var _settings_dead: LabelSettings = null
 var _settings_scorched: LabelSettings = null
+var _hit_flash_tween: Tween = null
 
 
 ## Initializes the cell with its letter, grid position, and builds child nodes.
@@ -191,6 +193,8 @@ func _apply_visual_state() -> void:
 	if _letter_label == null:
 		return
 
+	_letter_label.self_modulate = Color.WHITE
+
 	match cell_state:
 		CellState.NORMAL:
 			_letter_label.label_settings = _settings_scorched if is_scorched else _settings_normal
@@ -216,6 +220,43 @@ func _apply_visual_state() -> void:
 			_letter_label.label_settings = _settings_dead
 			_letter_label.scale = Vector2(HIGHLIGHT_SCALE, HIGHLIGHT_SCALE)
 			_life_icon.visible = false
+
+
+func play_damage_flash() -> void:
+	if _letter_label == null:
+		return
+	if _hit_flash_tween:
+		_hit_flash_tween.kill()
+
+	_letter_label.self_modulate = GameTheme.COLOR_ENEMY
+	_hit_flash_tween = create_tween()
+	_hit_flash_tween.tween_property(_letter_label, "self_modulate", Color.WHITE, 0.12)\
+		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	_hit_flash_tween.tween_property(_letter_label, "self_modulate", GameTheme.COLOR_ENEMY, 0.12)\
+		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	_hit_flash_tween.tween_property(_letter_label, "self_modulate", Color.WHITE, 0.12)\
+		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	_hit_flash_tween.tween_property(_letter_label, "self_modulate", GameTheme.COLOR_ENEMY, 0.12)\
+		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	_hit_flash_tween.tween_property(_letter_label, "self_modulate", Color.WHITE, 0.12)\
+		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+
+
+func refresh_layout() -> void:
+	custom_minimum_size = GameTheme.GRID_CELL_SIZE
+	size = GameTheme.GRID_CELL_SIZE
+	_create_label_settings()
+
+	if _letter_label:
+		_letter_label.size = GameTheme.GRID_CELL_SIZE
+		_letter_label.pivot_offset = GameTheme.GRID_CELL_SIZE * 0.5
+	if _life_icon:
+		_life_icon.position = Vector2(
+			GameTheme.GRID_CELL_SIZE.x - LIFE_ICON_SIZE.x - LIFE_ICON_MARGIN.x,
+			LIFE_ICON_MARGIN.y
+		)
+
+	_apply_visual_state()
 
 
 ## Draws debug overlays when DEBUG_COLLISION is enabled.

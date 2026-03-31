@@ -149,3 +149,9 @@ func set_difficulty(level: int) -> void:
 
 	if _spawn_timer:
 		_spawn_timer.wait_time = spawn_interval
+
+
+func refresh_layout() -> void:
+	circle_center = GameTheme.CIRCLE_CENTER
+	circle_radius = GameTheme.CIRCLE_RADIUS
+	_clear_all_enemies()

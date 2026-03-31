@@ -152,7 +152,7 @@ const CIRCLE_RADIUS_FRACTION: float = 0.40
 
 ## How many small dots appear around the edge of the circle.
 ## Each dot represents one gold letter you need to collect to finish the round.
-const CIRCLE_DOT_COUNT: int = 12
+const CIRCLE_DOT_COUNT: int = 24
 
 ## How big each small dot around the circle edge is (in pixels radius).
 ## Bigger = easier to see your progress; smaller = more subtle.
