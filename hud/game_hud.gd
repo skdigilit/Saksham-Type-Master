@@ -20,6 +20,11 @@ var _game_over_label: Label = null
 ## New game button (shown below game over label on game over)
 var _restart_button: Button = null
 
+## Heart textures and slot nodes shown under the title.
+var _heart_full_texture: Texture2D = null
+var _heart_outline_texture: Texture2D = null
+var _heart_slots: Array[TextureRect] = []
+
 ## How far the HUD labels sit from the screen edges (in pixels).
 ## Increase to push score and title further inward; decrease to move them closer to the edge.
 const MARGIN: float = 32.0
@@ -31,9 +36,15 @@ const LINE_SPACING: float = 44.0
 ## The extra gap between the "GAME OVER" text and the "NEW GAME" button below it (in pixels).
 ## Increase to push the button further away from the game over label.
 const BUTTON_GAP: float = 16.0
+const HEART_TOP_GAP: float = 68.0
+const HEART_SLOT_SIZE: Vector2 = Vector2(42.0, 42.0)
+const HEART_SLOT_SPACING: float = 12.0
+const HEART_FLY_SIZE: Vector2 = Vector2(26.0, 26.0)
 
 
 func _ready() -> void:
+	_heart_full_texture = load("res://sprites/heart_full.png") as Texture2D
+	_heart_outline_texture = load("res://sprites/heart_outline.png") as Texture2D
 	_create_hud_elements()
 
 
@@ -48,6 +59,8 @@ func _create_hud_elements() -> void:
 	_title_label.position = Vector2(MARGIN, MARGIN)
 	_title_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
 	add_child(_title_label)
+
+	_create_heart_slots()
 
 	## Score label (bottom-left, first line)
 	_score_label = _create_hud_label()
@@ -86,6 +99,23 @@ func _create_hud_elements() -> void:
 	_restart_button = _create_restart_button(viewport_size)
 	_restart_button.visible = false
 	add_child(_restart_button)
+
+
+func _create_heart_slots() -> void:
+	_heart_slots.clear()
+	for i in range(3):
+		var heart := TextureRect.new()
+		heart.texture = _heart_outline_texture
+		heart.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		heart.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		heart.custom_minimum_size = HEART_SLOT_SIZE
+		heart.size = HEART_SLOT_SIZE
+		heart.position = Vector2(
+			MARGIN + i * (HEART_SLOT_SIZE.x + HEART_SLOT_SPACING),
+			MARGIN + HEART_TOP_GAP
+		)
+		add_child(heart)
+		_heart_slots.append(heart)
 
 
 ## Builds the styled restart button centered in the lower half of the screen.
@@ -148,6 +178,46 @@ func update_score(value: int) -> void:
 func update_collected(value: int) -> void:
 	if _collected_label:
 		_collected_label.text = "O %03d" % value
+
+
+func update_lives(current_lives: int) -> void:
+	for i in range(_heart_slots.size()):
+		_heart_slots[i].texture = _heart_full_texture if i < current_lives else _heart_outline_texture
+
+
+func animate_life_gain(from_position: Vector2, target_life_index: int) -> void:
+	if _heart_full_texture == null:
+		return
+	if target_life_index < 0 or target_life_index >= _heart_slots.size():
+		return
+
+	var flying_heart := TextureRect.new()
+	flying_heart.texture = _heart_full_texture
+	flying_heart.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	flying_heart.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	flying_heart.custom_minimum_size = HEART_FLY_SIZE
+	flying_heart.size = HEART_FLY_SIZE
+	flying_heart.position = from_position - HEART_FLY_SIZE * 0.5
+	add_child(flying_heart)
+
+	var target_center: Vector2 = get_heart_slot_center(target_life_index)
+	var tween: Tween = create_tween()
+	tween.set_parallel(true)
+	tween.tween_property(flying_heart, "position", target_center - HEART_FLY_SIZE * 0.5, 0.45)\
+		.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_IN)
+	tween.tween_property(flying_heart, "scale", Vector2(0.65, 0.65), 0.45)\
+		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
+	tween.tween_property(flying_heart, "modulate:a", 0.0, 0.45)\
+		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
+	tween.finished.connect(func() -> void:
+		flying_heart.queue_free()
+	)
+
+
+func get_heart_slot_center(index: int) -> Vector2:
+	if index < 0 or index >= _heart_slots.size():
+		return Vector2.ZERO
+	return _heart_slots[index].position + _heart_slots[index].size * 0.5
 
 
 ## Shows the game over label and the restart button.

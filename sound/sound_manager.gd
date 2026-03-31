@@ -41,8 +41,8 @@ func _on_player_moved(_row: int, _col: int, _letter: String) -> void:
 		_move_player.play()
 
 
-## Plays the woody block sound when a gold letter is collected.
-func _on_collectible_collected(_total: int) -> void:
+## Plays the woody block sound when any collectible is collected.
+func _on_collectible_collected(_total: int, _collectible_type: int, _world_position: Vector2) -> void:
 	if GameTheme.SOUND_ENABLED:
 		_collect_player.play()
 
