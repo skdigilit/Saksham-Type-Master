@@ -61,3 +61,8 @@ func get_dot_position(index: int) -> Vector2:
 	var angle: float = -PI / 2.0 + (float(index) / float(GameTheme.CIRCLE_DOT_COUNT)) * TAU
 	var local_pos: Vector2 = Vector2(cos(angle), sin(angle)) * GameTheme.CIRCLE_RADIUS
 	return position + local_pos
+
+
+func refresh_layout() -> void:
+	position = GameTheme.CIRCLE_CENTER
+	queue_redraw()

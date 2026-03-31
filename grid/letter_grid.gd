@@ -49,9 +49,13 @@ func _generate_grid() -> void:
 			)
 
 			## Apply a random stagger within a fraction of the cell size
+			cell.stagger_ratio = Vector2(
+				randf_range(-STAGGER_FRACTION_X, STAGGER_FRACTION_X),
+				randf_range(-STAGGER_FRACTION_Y, STAGGER_FRACTION_Y)
+			)
 			var stagger: Vector2 = Vector2(
-				randf_range(-GameTheme.GRID_CELL_SIZE.x * STAGGER_FRACTION_X, GameTheme.GRID_CELL_SIZE.x * STAGGER_FRACTION_X),
-				randf_range(-GameTheme.GRID_CELL_SIZE.y * STAGGER_FRACTION_Y, GameTheme.GRID_CELL_SIZE.y * STAGGER_FRACTION_Y)
+				GameTheme.GRID_CELL_SIZE.x * cell.stagger_ratio.x,
+				GameTheme.GRID_CELL_SIZE.y * cell.stagger_ratio.y
 			)
 
 			cell.position = pos - GameTheme.GRID_CELL_SIZE * 0.5 + stagger
@@ -183,3 +187,21 @@ func randomize_grid() -> void:
 		var cell: LetterCell = get_cell(pos.x, pos.y)
 		if cell:
 			cell.set_letter(new_letters[i])
+
+
+func refresh_layout() -> void:
+	GridHelpers.compute_layout()
+	for pos in GridHelpers.all_positions():
+		var cell: LetterCell = get_cell(pos.x, pos.y)
+		if cell == null:
+			continue
+
+		cell.refresh_layout()
+		var cell_center: Vector2 = GridHelpers.cell_position(
+			pos.x, pos.y, GameTheme.CIRCLE_CENTER, GameTheme.GRID_CELL_SIZE
+		)
+		var stagger: Vector2 = Vector2(
+			GameTheme.GRID_CELL_SIZE.x * cell.stagger_ratio.x,
+			GameTheme.GRID_CELL_SIZE.y * cell.stagger_ratio.y
+		)
+		cell.position = cell_center - GameTheme.GRID_CELL_SIZE * 0.5 + stagger

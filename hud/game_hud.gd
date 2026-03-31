@@ -41,25 +41,22 @@ const HEART_SLOT_SIZE: Vector2 = Vector2(42.0, 42.0)
 const HEART_SLOT_SPACING: float = 12.0
 const HEART_FLY_SIZE: Vector2 = Vector2(26.0, 26.0)
 const HEART_FLY_DURATION: float = 0.8
-const LIFE_LOSS_POPUP_RISE: float = 34.0
-const LIFE_LOSS_POPUP_DURATION: float = 0.7
+const LIFE_LOSS_POPUP_RISE: float = 54.0
+const LIFE_LOSS_POPUP_DURATION: float = 1.25
 
 
 func _ready() -> void:
 	_heart_full_texture = load("res://sprites/heart_full.png") as Texture2D
 	_heart_outline_texture = load("res://sprites/heart_outline.png") as Texture2D
 	_create_hud_elements()
+	refresh_layout(get_viewport().get_visible_rect().size)
 
 
 ## Builds all HUD label nodes and positions them.
 func _create_hud_elements() -> void:
-	var viewport_size: Vector2 = get_viewport().get_visible_rect().size
-
 	## Title label (top-left)
 	_title_label = _create_hud_label()
 	_title_label.text = "SAKSHAM TYPING MASTER"
-	_title_label.size = Vector2(600, 60)
-	_title_label.position = Vector2(MARGIN, MARGIN)
 	_title_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
 	add_child(_title_label)
 
@@ -68,25 +65,18 @@ func _create_hud_elements() -> void:
 	## Score label (bottom-left, first line)
 	_score_label = _create_hud_label()
 	_score_label.text = "M 000"
-	_score_label.position = Vector2(MARGIN, viewport_size.y - MARGIN - LINE_SPACING * 2)
 	_score_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
 	add_child(_score_label)
 
 	## Collected label (bottom-left, second line)
 	_collected_label = _create_hud_label()
 	_collected_label.text = "O 000"
-	_collected_label.position = Vector2(MARGIN, viewport_size.y - MARGIN - LINE_SPACING)
 	_collected_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
 	add_child(_collected_label)
 
 	## Game over label (centered, hidden initially)
 	_game_over_label = _create_hud_label()
 	_game_over_label.text = "GAME OVER"
-	_game_over_label.size = Vector2(400, 60)
-	_game_over_label.position = Vector2(
-		(viewport_size.x - 400) * 0.5,
-		viewport_size.y * 0.5 - LINE_SPACING
-	)
 	_game_over_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_game_over_label.label_settings = GameTheme.create_label_settings(
 		GameTheme.COLOR_ENEMY,
@@ -99,7 +89,7 @@ func _create_hud_elements() -> void:
 	add_child(_game_over_label)
 
 	## Restart button (below the game over label, hidden initially)
-	_restart_button = _create_restart_button(viewport_size)
+	_restart_button = _create_restart_button()
 	_restart_button.visible = false
 	add_child(_restart_button)
 
@@ -122,7 +112,7 @@ func _create_heart_slots() -> void:
 
 
 ## Builds the styled restart button centered in the lower half of the screen.
-func _create_restart_button(viewport_size: Vector2) -> Button:
+func _create_restart_button() -> Button:
 	var btn := Button.new()
 	btn.text = "NEW GAME"
 
@@ -146,11 +136,6 @@ func _create_restart_button(viewport_size: Vector2) -> Button:
 	var btn_width: float = 300.0
 	var btn_height: float = 60.0
 	btn.size = Vector2(btn_width, btn_height)
-	## Center horizontally, place just below vertical center
-	btn.position = Vector2(
-		(viewport_size.x - btn_width) * 0.5,
-		viewport_size.y * 0.5 + LINE_SPACING + BUTTON_GAP
-	)
 	btn.alignment = HORIZONTAL_ALIGNMENT_CENTER
 
 	btn.pressed.connect(func() -> void: restart_requested.emit())
@@ -217,21 +202,19 @@ func animate_life_gain(from_position: Vector2, target_life_index: int) -> void:
 	)
 
 
-func animate_life_loss(lost_life_index: int) -> void:
-	if lost_life_index < 0 or lost_life_index >= _heart_slots.size():
-		return
-
+func animate_life_loss(from_position: Vector2) -> void:
 	var popup := _create_hud_label()
 	popup.text = "-1"
 	popup.label_settings = GameTheme.create_label_settings(
 		GameTheme.COLOR_ENEMY,
-		36,
+		72,
 		GameTheme.COLOR_CIRCLE_OUTLINE,
-		3
+		5
 	)
-	popup.size = Vector2(80, 44)
+	popup.size = Vector2(140, 90)
 	popup.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	popup.position = get_heart_slot_center(lost_life_index) + Vector2(-popup.size.x * 0.5, -18.0)
+	popup.position = from_position + Vector2(-popup.size.x * 0.5, -48.0)
+	popup.scale = Vector2(0.55, 0.55)
 	add_child(popup)
 
 	var tween: Tween = create_tween()
@@ -240,6 +223,12 @@ func animate_life_loss(lost_life_index: int) -> void:
 		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
 	tween.tween_property(popup, "modulate:a", 0.0, LIFE_LOSS_POPUP_DURATION)\
 		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
+	tween.chain().tween_property(popup, "scale", Vector2(1.55, 1.55), 0.28)\
+		.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	tween.chain().tween_property(popup, "scale", Vector2(0.92, 0.92), 0.24)\
+		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	tween.chain().tween_property(popup, "scale", Vector2(1.2, 1.2), 0.26)\
+		.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 	tween.finished.connect(func() -> void:
 		popup.queue_free()
 	)
@@ -249,6 +238,57 @@ func get_heart_slot_center(index: int) -> Vector2:
 	if index < 0 or index >= _heart_slots.size():
 		return Vector2.ZERO
 	return _heart_slots[index].position + _heart_slots[index].size * 0.5
+
+
+func refresh_layout(viewport_size: Vector2) -> void:
+	var hud_font_size: int = clampi(int(minf(GameTheme.FONT_SIZE_HUD, viewport_size.x * 0.045)), 28, GameTheme.FONT_SIZE_HUD)
+
+	if _title_label:
+		_title_label.label_settings = GameTheme.create_label_settings(
+			GameTheme.COLOR_HUD,
+			hud_font_size,
+			GameTheme.COLOR_LETTER_OUTLINE,
+			3
+		)
+		_title_label.size = Vector2(maxf(240.0, viewport_size.x - MARGIN * 2.0), 60.0)
+		_title_label.position = Vector2(MARGIN, MARGIN)
+
+	for i in range(_heart_slots.size()):
+		_heart_slots[i].position = Vector2(
+			MARGIN + i * (HEART_SLOT_SIZE.x + HEART_SLOT_SPACING),
+			MARGIN + HEART_TOP_GAP
+		)
+
+	if _score_label:
+		_score_label.label_settings = GameTheme.create_label_settings(
+			GameTheme.COLOR_HUD,
+			hud_font_size,
+			GameTheme.COLOR_LETTER_OUTLINE,
+			3
+		)
+		_score_label.position = Vector2(MARGIN, viewport_size.y - MARGIN - LINE_SPACING * 2)
+
+	if _collected_label:
+		_collected_label.label_settings = GameTheme.create_label_settings(
+			GameTheme.COLOR_HUD,
+			hud_font_size,
+			GameTheme.COLOR_LETTER_OUTLINE,
+			3
+		)
+		_collected_label.position = Vector2(MARGIN, viewport_size.y - MARGIN - LINE_SPACING)
+
+	if _game_over_label:
+		_game_over_label.size = Vector2(minf(400.0, viewport_size.x - MARGIN * 2.0), 60.0)
+		_game_over_label.position = Vector2(
+			(viewport_size.x - _game_over_label.size.x) * 0.5,
+			viewport_size.y * 0.5 - LINE_SPACING
+		)
+
+	if _restart_button:
+		_restart_button.position = Vector2(
+			(viewport_size.x - _restart_button.size.x) * 0.5,
+			viewport_size.y * 0.5 + LINE_SPACING + BUTTON_GAP
+		)
 
 
 ## Shows the game over label and the restart button.

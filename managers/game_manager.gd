@@ -165,12 +165,20 @@ func _on_all_collected() -> void:
 
 ## Called when the player is hit by an enemy.
 func _on_player_hit() -> void:
-	var lost_life_index: int = current_lives - 1
+	var life_loss_position: Vector2 = Vector2.ZERO
+	if grid and player:
+		var player_cell: LetterCell = grid.get_cell(player.current_row, player.current_col)
+		if player_cell:
+			life_loss_position = player_cell.global_position + GameTheme.GRID_CELL_SIZE * 0.5
+			player_cell.play_damage_flash()
+		else:
+			life_loss_position = player.get_current_pixel_position()
+
 	current_lives -= 1
 	_hit_invulnerability_timer = HIT_INVULNERABILITY_DURATION
 	if hud:
 		hud.update_lives(current_lives)
-		hud.animate_life_loss(lost_life_index)
+		hud.animate_life_loss(life_loss_position)
 
 	if current_lives <= 0:
 		_on_game_over()

@@ -44,8 +44,19 @@ var _origin: Vector2 = Vector2.ZERO
 
 func _ready() -> void:
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_rebuild_background(get_viewport_rect().size)
 
-	var viewport_size: Vector2 = get_viewport_rect().size
+
+func refresh_layout(viewport_size: Vector2) -> void:
+	_rebuild_background(viewport_size)
+
+
+func _rebuild_background(viewport_size: Vector2) -> void:
+	if _bg_label:
+		remove_child(_bg_label)
+		_bg_label.free()
+		_bg_label = null
+
 	var cols: int = int(viewport_size.x / LETTER_SPACING_X) + OVERFLOW_CELLS * 2 + 2
 	var rows: int = int(viewport_size.y / LETTER_SPACING_Y) + OVERFLOW_CELLS * 2 + 2
 	var total_chars: int = cols * rows
