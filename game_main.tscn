@@ -1,0 +1,11 @@
+[gd_scene format=3 uid="uid://ctneacfgtl3st"]
+
+[ext_resource type="Script" uid="uid://hf2gh2rqllos" path="res://game_main.gd" id="1_r2uep"]
+
+[node name="game_main" type="ColorRect" unique_id=1766338178]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_r2uep")
