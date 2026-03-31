@@ -46,6 +46,10 @@ const COLOR_LETTER_HIGHLIGHT_TEXT: Color = Color(0.95, 0.95, 0.92)
 ## Bright yellow-gold so it is easy to spot across the grid.
 const COLOR_LETTER_COLLECTIBLE: Color = Color(0.83, 0.78, 0.29)
 
+## The colour of the bonus life letter.
+## Warm pink so it reads differently from the normal gold collectible.
+const COLOR_LETTER_LIFE_COLLECTIBLE: Color = Color(0.92, 0.48, 0.67)
+
 ## The colour of the decorative letters floating in the background.
 ## Very faint (low alpha) so they don't distract from the game.
 const COLOR_BG_LETTER: Color = Color(0.42, 0.48, 0.24, 0.35)

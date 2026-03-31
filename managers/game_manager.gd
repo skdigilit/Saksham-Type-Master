@@ -15,6 +15,12 @@ var current_difficulty: Difficulty = Difficulty.EASY
 ## Player's score (increments on collection)
 var score: int = 0
 
+## Player life state.
+const MAX_LIVES: int = 3
+const HIT_INVULNERABILITY_DURATION: float = 1.0
+var current_lives: int = MAX_LIVES
+var _hit_invulnerability_timer: float = 0.0
+
 ## Node references (resolved in _ready)
 var grid: LetterGrid = null
 var player: PlayerController = null
@@ -60,6 +66,8 @@ func _start_game() -> void:
 	current_state = GameState.PLAYING
 	score = 0
 	_score_timer = 0.0
+	current_lives = MAX_LIVES
+	_hit_invulnerability_timer = 0.0
 
 	## Initialize player controller
 	if player and grid:
@@ -69,6 +77,7 @@ func _start_game() -> void:
 	## Initialize collectible manager
 	if collectible_manager and grid and game_circle and player:
 		collectible_manager.initialize(grid, game_circle, player)
+		collectible_manager.can_spawn_life_collectible = _can_gain_life
 		collectible_manager.collectible_collected.connect(_on_collectible_collected)
 		collectible_manager.all_collected.connect(_on_all_collected)
 		collectible_manager.spawn_collectible()
@@ -83,6 +92,7 @@ func _start_game() -> void:
 	if hud:
 		hud.update_score(score)
 		hud.update_collected(0)
+		hud.update_lives(current_lives)
 		hud.restart_requested.connect(_on_restart_requested)
 
 	## Wire sounds
@@ -94,11 +104,14 @@ func _process(delta: float) -> void:
 	if current_state != GameState.PLAYING:
 		return
 
+	if _hit_invulnerability_timer > 0.0:
+		_hit_invulnerability_timer = maxf(0.0, _hit_invulnerability_timer - delta)
+
 	## Check enemy-player collision
-	if enemy_spawner and player:
+	if enemy_spawner and player and _hit_invulnerability_timer <= 0.0:
 		var player_pos: Vector2 = player.get_current_pixel_position()
 		if enemy_spawner.check_player_collision(player_pos):
-			_on_game_over()
+			_on_player_hit()
 			return
 
 	## Mark letters red while an enemy is visually passing over them
@@ -114,12 +127,21 @@ func _process(delta: float) -> void:
 			hud.update_score(score)
 
 
-## Called when the player collects a yellow letter.
-func _on_collectible_collected(total: int) -> void:
-	score += SCORE_PER_COLLECT
-	if hud:
-		hud.update_score(score)
-		hud.update_collected(total)
+## Called when the player collects a collectible.
+func _on_collectible_collected(total: int, collectible_type: CollectibleManager.CollectibleType, world_position: Vector2) -> void:
+	if collectible_type == CollectibleManager.CollectibleType.LIFE:
+		if current_lives < MAX_LIVES:
+			var gained_life_index: int = current_lives
+			current_lives += 1
+			if hud:
+				hud.animate_life_gain(world_position, gained_life_index)
+				hud.update_lives(current_lives)
+	else:
+		score += SCORE_PER_COLLECT
+		if hud:
+			hud.update_score(score)
+			hud.update_collected(total)
+
 	## Shuffle all letters so each collection feels fresh
 	if grid:
 		grid.randomize_grid()
@@ -136,6 +158,17 @@ func _on_all_collected() -> void:
 
 
 ## Called when the player is hit by an enemy.
+func _on_player_hit() -> void:
+	current_lives -= 1
+	_hit_invulnerability_timer = HIT_INVULNERABILITY_DURATION
+	if hud:
+		hud.update_lives(current_lives)
+
+	if current_lives <= 0:
+		_on_game_over()
+
+
+## Called when the player is out of lives.
 func _on_game_over() -> void:
 	current_state = GameState.GAME_OVER
 	if player:
@@ -157,6 +190,10 @@ func _on_game_over() -> void:
 	if game_circle:
 		var tween: Tween = create_tween()
 		tween.tween_property(game_circle, "modulate:a", 0.25, 1.2)
+
+
+func _can_gain_life() -> bool:
+	return current_lives < MAX_LIVES
 
 
 ## Reloads the current scene to start a fresh game.
