@@ -38,8 +38,8 @@ var target_count: int = GameTheme.CIRCLE_DOT_COUNT
 ## Optional callback used by the game manager to disable life spawns when already full.
 var can_spawn_life_collectible: Callable = Callable()
 
-## Chance that the next collectible is a life pickup when eligible.
-const LIFE_COLLECTIBLE_CHANCE: float = 0.22
+## Timer used to expire the temporary life collectible.
+var _life_collectible_timer: Timer = null
 
 
 ## Sets up references and connects to player movement signal.
@@ -48,6 +48,12 @@ func initialize(p_grid: LetterGrid, p_circle: GameCircle, p_player: PlayerContro
 	game_circle = p_circle
 	player = p_player
 	player.moved_to.connect(_on_player_moved)
+
+	if _life_collectible_timer == null:
+		_life_collectible_timer = Timer.new()
+		_life_collectible_timer.one_shot = true
+		_life_collectible_timer.timeout.connect(_on_life_collectible_expired)
+		add_child(_life_collectible_timer)
 
 
 ## Spawns a new collectible at a random cell that is not the player's current position.
@@ -77,8 +83,10 @@ func spawn_collectible() -> void:
 	if cell:
 		if active_collectible_type == CollectibleType.LIFE:
 			cell.set_state(LetterCell.CellState.LIFE_COLLECTIBLE)
+			_life_collectible_timer.start(GameTheme.LIFE_COLLECTIBLE_DURATION)
 		else:
 			cell.set_state(LetterCell.CellState.COLLECTIBLE)
+			_life_collectible_timer.stop()
 
 	## Update the circle to show the next target dot
 	if game_circle:
@@ -97,6 +105,8 @@ func _collect() -> void:
 	var collect_world_position: Vector2 = Vector2.ZERO
 	if collected_cell:
 		collect_world_position = collected_cell.global_position + GameTheme.GRID_CELL_SIZE * 0.5
+
+	_life_collectible_timer.stop()
 
 	if active_collectible_type == CollectibleType.REGULAR:
 		collected_count += 1
@@ -128,9 +138,24 @@ func reset() -> void:
 	if game_circle:
 		game_circle.set_filled_dots(0)
 		game_circle.set_active_dot(-1)
+	if _life_collectible_timer:
+		_life_collectible_timer.stop()
 
 
 func _choose_collectible_type() -> CollectibleType:
-	if can_spawn_life_collectible.is_valid() and can_spawn_life_collectible.call() and randf() <= LIFE_COLLECTIBLE_CHANCE:
+	if can_spawn_life_collectible.is_valid() and can_spawn_life_collectible.call() and randf() <= GameTheme.LIFE_COLLECTIBLE_CHANCE:
 		return CollectibleType.LIFE
 	return CollectibleType.REGULAR
+
+
+func _on_life_collectible_expired() -> void:
+	if active_collectible_type != CollectibleType.LIFE:
+		return
+
+	var expired_cell: LetterCell = grid.get_cell(active_collectible_pos.x, active_collectible_pos.y)
+	if expired_cell:
+		expired_cell.set_state(LetterCell.CellState.NORMAL)
+
+	active_collectible_pos = Vector2i(-1, -1)
+	active_collectible_type = CollectibleType.REGULAR
+	spawn_collectible()

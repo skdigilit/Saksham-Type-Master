@@ -16,10 +16,11 @@ var current_difficulty: Difficulty = Difficulty.EASY
 var score: int = 0
 
 ## Player life state.
-const MAX_LIVES: int = 3
+const MAX_LIVES: int = GameTheme.PLAYER_MAX_LIVES
 const HIT_INVULNERABILITY_DURATION: float = 1.0
-var current_lives: int = MAX_LIVES
+var current_lives: int = clampi(GameTheme.PLAYER_STARTING_LIVES, 1, MAX_LIVES)
 var _hit_invulnerability_timer: float = 0.0
+var _player_collision_latched: bool = false
 
 ## Node references (resolved in _ready)
 var grid: LetterGrid = null
@@ -66,8 +67,9 @@ func _start_game() -> void:
 	current_state = GameState.PLAYING
 	score = 0
 	_score_timer = 0.0
-	current_lives = MAX_LIVES
+	current_lives = clampi(GameTheme.PLAYER_STARTING_LIVES, 1, MAX_LIVES)
 	_hit_invulnerability_timer = 0.0
+	_player_collision_latched = false
 
 	## Initialize player controller
 	if player and grid:
@@ -108,9 +110,13 @@ func _process(delta: float) -> void:
 		_hit_invulnerability_timer = maxf(0.0, _hit_invulnerability_timer - delta)
 
 	## Check enemy-player collision
-	if enemy_spawner and player and _hit_invulnerability_timer <= 0.0:
+	if enemy_spawner and player:
 		var player_pos: Vector2 = player.get_current_pixel_position()
-		if enemy_spawner.check_player_collision(player_pos):
+		var is_colliding: bool = enemy_spawner.check_player_collision(player_pos)
+		if not is_colliding:
+			_player_collision_latched = false
+		elif not _player_collision_latched and _hit_invulnerability_timer <= 0.0:
+			_player_collision_latched = true
 			_on_player_hit()
 			return
 
@@ -159,10 +165,12 @@ func _on_all_collected() -> void:
 
 ## Called when the player is hit by an enemy.
 func _on_player_hit() -> void:
+	var lost_life_index: int = current_lives - 1
 	current_lives -= 1
 	_hit_invulnerability_timer = HIT_INVULNERABILITY_DURATION
 	if hud:
 		hud.update_lives(current_lives)
+		hud.animate_life_loss(lost_life_index)
 
 	if current_lives <= 0:
 		_on_game_over()
@@ -171,6 +179,7 @@ func _on_player_hit() -> void:
 ## Called when the player is out of lives.
 func _on_game_over() -> void:
 	current_state = GameState.GAME_OVER
+	_player_collision_latched = true
 	if player:
 		player.is_input_enabled = false
 	if enemy_spawner:

@@ -29,6 +29,7 @@ var is_scorched: bool = false
 
 ## Child nodes created in setup
 var _letter_label: Label = null
+var _life_icon: TextureRect = null
 
 ## Internal timer that increases every frame to drive the swinging animation.
 var _swing_time: float = 0.0
@@ -48,6 +49,8 @@ const SWING_SPEED: float = 1.8
 ## How much bigger the active (player's current) letter appears compared to normal.
 ## 1.2 means 20% larger. Increase to make the player's position even more obvious.
 const HIGHLIGHT_SCALE: float = 1.2
+const LIFE_ICON_SIZE: Vector2 = Vector2(20.0, 20.0)
+const LIFE_ICON_MARGIN: Vector2 = Vector2(8.0, 6.0)
 
 ## Cached LabelSettings for each state
 var _settings_normal: LabelSettings = null
@@ -140,6 +143,20 @@ func _create_children() -> void:
 	## Apply squiggle shader to the label for hand-drawn wobble
 	GameTheme.apply_squiggle_shader(_letter_label, GameTheme.SQUIGGLE_STRENGTH_NORMAL)
 
+	## Small heart badge to clarify the pink collectible restores life.
+	_life_icon = TextureRect.new()
+	_life_icon.texture = load("res://sprites/heart_full.png") as Texture2D
+	_life_icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	_life_icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	_life_icon.custom_minimum_size = LIFE_ICON_SIZE
+	_life_icon.size = LIFE_ICON_SIZE
+	_life_icon.position = Vector2(
+		GameTheme.GRID_CELL_SIZE.x - LIFE_ICON_SIZE.x - LIFE_ICON_MARGIN.x,
+		LIFE_ICON_MARGIN.y
+	)
+	_life_icon.visible = false
+	add_child(_life_icon)
+
 
 ## Animates a subtle swinging rotation each frame.
 func _process(delta: float) -> void:
@@ -178,21 +195,27 @@ func _apply_visual_state() -> void:
 		CellState.NORMAL:
 			_letter_label.label_settings = _settings_scorched if is_scorched else _settings_normal
 			_letter_label.scale = Vector2.ONE
+			_life_icon.visible = false
 		CellState.HIGHLIGHTED:
 			_letter_label.label_settings = _settings_highlighted
 			_letter_label.scale = Vector2(HIGHLIGHT_SCALE, HIGHLIGHT_SCALE)
+			_life_icon.visible = false
 		CellState.COLLECTIBLE:
 			_letter_label.label_settings = _settings_scorched if is_scorched else _settings_collectible
 			_letter_label.scale = Vector2.ONE
+			_life_icon.visible = false
 		CellState.LIFE_COLLECTIBLE:
 			_letter_label.label_settings = _settings_scorched if is_scorched else _settings_life_collectible
 			_letter_label.scale = Vector2.ONE
+			_life_icon.visible = true
 		CellState.EMPTY:
 			_letter_label.label_settings = _settings_empty
 			_letter_label.scale = Vector2.ONE
+			_life_icon.visible = false
 		CellState.DEAD:
 			_letter_label.label_settings = _settings_dead
 			_letter_label.scale = Vector2(HIGHLIGHT_SCALE, HIGHLIGHT_SCALE)
+			_life_icon.visible = false
 
 
 ## Draws debug overlays when DEBUG_COLLISION is enabled.
