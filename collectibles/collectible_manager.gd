@@ -6,6 +6,7 @@ extends Node
 enum CollectibleType {
 	REGULAR,
 	LIFE,
+	FREEZE,
 }
 
 ## Emitted when a collectible is picked up.
@@ -41,6 +42,9 @@ var can_spawn_life_collectible: Callable = Callable()
 ## Timer used to expire the temporary life collectible.
 var _life_collectible_timer: Timer = null
 
+## Timer used to expire the temporary freeze collectible.
+var _freeze_collectible_timer: Timer = null
+
 
 ## Sets up references and connects to player movement signal.
 func initialize(p_grid: LetterGrid, p_circle: GameCircle, p_player: PlayerController) -> void:
@@ -54,6 +58,12 @@ func initialize(p_grid: LetterGrid, p_circle: GameCircle, p_player: PlayerContro
 		_life_collectible_timer.one_shot = true
 		_life_collectible_timer.timeout.connect(_on_life_collectible_expired)
 		add_child(_life_collectible_timer)
+
+	if _freeze_collectible_timer == null:
+		_freeze_collectible_timer = Timer.new()
+		_freeze_collectible_timer.one_shot = true
+		_freeze_collectible_timer.timeout.connect(_on_freeze_collectible_expired)
+		add_child(_freeze_collectible_timer)
 
 
 ## Spawns a new collectible at a random cell that is not the player's current position.
@@ -84,9 +94,15 @@ func spawn_collectible() -> void:
 		if active_collectible_type == CollectibleType.LIFE:
 			cell.set_state(LetterCell.CellState.LIFE_COLLECTIBLE)
 			_life_collectible_timer.start(GameTheme.LIFE_COLLECTIBLE_DURATION)
+			_freeze_collectible_timer.stop()
+		elif active_collectible_type == CollectibleType.FREEZE:
+			cell.set_state(LetterCell.CellState.FREEZE_COLLECTIBLE)
+			_freeze_collectible_timer.start(GameTheme.FREEZE_COLLECTIBLE_DURATION)
+			_life_collectible_timer.stop()
 		else:
 			cell.set_state(LetterCell.CellState.COLLECTIBLE)
 			_life_collectible_timer.stop()
+			_freeze_collectible_timer.stop()
 
 	## Update the circle to show the next target dot
 	if game_circle:
@@ -107,6 +123,7 @@ func _collect() -> void:
 		collect_world_position = collected_cell.global_position + GameTheme.GRID_CELL_SIZE * 0.5
 
 	_life_collectible_timer.stop()
+	_freeze_collectible_timer.stop()
 
 	if active_collectible_type == CollectibleType.REGULAR:
 		collected_count += 1
@@ -140,16 +157,36 @@ func reset() -> void:
 		game_circle.set_active_dot(-1)
 	if _life_collectible_timer:
 		_life_collectible_timer.stop()
+	if _freeze_collectible_timer:
+		_freeze_collectible_timer.stop()
 
 
 func _choose_collectible_type() -> CollectibleType:
-	if can_spawn_life_collectible.is_valid() and can_spawn_life_collectible.call() and randf() <= GameTheme.LIFE_COLLECTIBLE_CHANCE:
+	var roll: float = randf()
+	## Check life first, then freeze, then default to regular
+	if can_spawn_life_collectible.is_valid() and can_spawn_life_collectible.call() and roll <= GameTheme.LIFE_COLLECTIBLE_CHANCE:
 		return CollectibleType.LIFE
+	if roll <= GameTheme.LIFE_COLLECTIBLE_CHANCE + GameTheme.FREEZE_COLLECTIBLE_CHANCE:
+		return CollectibleType.FREEZE
 	return CollectibleType.REGULAR
 
 
 func _on_life_collectible_expired() -> void:
 	if active_collectible_type != CollectibleType.LIFE:
+		return
+
+	var expired_cell: LetterCell = grid.get_cell(active_collectible_pos.x, active_collectible_pos.y)
+	if expired_cell:
+		expired_cell.set_state(LetterCell.CellState.NORMAL)
+
+	active_collectible_pos = Vector2i(-1, -1)
+	active_collectible_type = CollectibleType.REGULAR
+	spawn_collectible()
+
+
+## Called when the freeze collectible expires on the board without being collected.
+func _on_freeze_collectible_expired() -> void:
+	if active_collectible_type != CollectibleType.FREEZE:
 		return
 
 	var expired_cell: LetterCell = grid.get_cell(active_collectible_pos.x, active_collectible_pos.y)

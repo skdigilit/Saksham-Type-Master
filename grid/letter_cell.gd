@@ -8,6 +8,7 @@ enum CellState {
 	HIGHLIGHTED,  ## Player's current position (bright text + background)
 	COLLECTIBLE,  ## Yellow letter the player must collect
 	LIFE_COLLECTIBLE,  ## Pink bonus letter that restores one life
+	FREEZE_COLLECTIBLE,  ## Ice-blue bonus letter that freezes all enemies
 	EMPTY,        ## Faded / inactive cell
 	DEAD,         ## Player was killed here — red letter
 }
@@ -58,6 +59,7 @@ var _settings_normal: LabelSettings = null
 var _settings_highlighted: LabelSettings = null
 var _settings_collectible: LabelSettings = null
 var _settings_life_collectible: LabelSettings = null
+var _settings_freeze_collectible: LabelSettings = null
 var _settings_empty: LabelSettings = null
 var _settings_dead: LabelSettings = null
 var _settings_scorched: LabelSettings = null
@@ -106,6 +108,12 @@ func _create_label_settings() -> void:
 	)
 	_settings_life_collectible = GameTheme.create_label_settings(
 		GameTheme.COLOR_LETTER_LIFE_COLLECTIBLE,
+		GameTheme.FONT_SIZE_GRID,
+		GameTheme.COLOR_CIRCLE_OUTLINE,
+		GameTheme.FONT_SIZE_GRID_OUTLINE + 1
+	)
+	_settings_freeze_collectible = GameTheme.create_label_settings(
+		GameTheme.COLOR_LETTER_FREEZE_COLLECTIBLE,
 		GameTheme.FONT_SIZE_GRID,
 		GameTheme.COLOR_CIRCLE_OUTLINE,
 		GameTheme.FONT_SIZE_GRID_OUTLINE + 1
@@ -212,6 +220,10 @@ func _apply_visual_state() -> void:
 			_letter_label.label_settings = _settings_scorched if is_scorched else _settings_life_collectible
 			_letter_label.scale = Vector2.ONE
 			_life_icon.visible = true
+		CellState.FREEZE_COLLECTIBLE:
+			_letter_label.label_settings = _settings_scorched if is_scorched else _settings_freeze_collectible
+			_letter_label.scale = Vector2.ONE
+			_life_icon.visible = false
 		CellState.EMPTY:
 			_letter_label.label_settings = _settings_empty
 			_letter_label.scale = Vector2.ONE

@@ -50,6 +50,14 @@ const COLOR_LETTER_COLLECTIBLE: Color = Color(0.83, 0.78, 0.29)
 ## Warm pink so it reads differently from the normal gold collectible.
 const COLOR_LETTER_LIFE_COLLECTIBLE: Color = Color(0.92, 0.48, 0.67)
 
+## The colour of the freeze collectible letter.
+## Cool ice-blue so it is immediately distinct from gold and pink collectibles.
+const COLOR_LETTER_FREEZE_COLLECTIBLE: Color = Color(0.4, 0.75, 0.92)
+
+## The colour enemies turn while frozen by the freeze collectible.
+## Pale ice-blue so frozen enemies are clearly distinguishable from active ones.
+const COLOR_ENEMY_FROZEN: Color = Color(0.55, 0.82, 0.95)
+
 ## The colour of the decorative letters floating in the background.
 ## Very faint (low alpha) so they don't distract from the game.
 const COLOR_BG_LETTER: Color = Color(0.42, 0.48, 0.24, 0.35)
@@ -126,6 +134,16 @@ const LIFE_COLLECTIBLE_CHANCE: float = 0.22
 
 ## How many seconds the bonus-life collectible stays on the board before it disappears.
 const LIFE_COLLECTIBLE_DURATION: float = 6.0
+
+## Chance that a newly spawned collectible becomes a freeze pickup (when eligible).
+## 0.15 means roughly 15% of eligible spawns.
+const FREEZE_COLLECTIBLE_CHANCE: float = 0.15
+
+## How many seconds the freeze collectible stays on the board before it disappears.
+const FREEZE_COLLECTIBLE_DURATION: float = 6.0
+
+## How many seconds all enemies stay frozen after collecting the freeze pickup.
+const FREEZE_EFFECT_DURATION: float = 3.0
 
 ## How many seconds pass before the game adds one more enemy to the maximum allowed.
 ## For example, 30.0 means every 30 seconds the game gets one enemy harder.

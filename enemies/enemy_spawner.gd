@@ -27,6 +27,12 @@ var player: PlayerController = null
 ## Whether spawning is active
 var is_active: bool = false
 
+## Timer that controls how long the freeze effect lasts after the player collects a freeze pickup.
+var _freeze_effect_timer: Timer = null
+
+## True while all enemies are frozen by the freeze collectible.
+var _is_freeze_active: bool = false
+
 
 func _ready() -> void:
 	## Create the spawn timer
@@ -42,6 +48,12 @@ func _ready() -> void:
 	_escalation_timer.one_shot = false
 	_escalation_timer.timeout.connect(_on_escalation_timer)
 	add_child(_escalation_timer)
+
+	## Create the freeze effect timer
+	_freeze_effect_timer = Timer.new()
+	_freeze_effect_timer.one_shot = true
+	_freeze_effect_timer.timeout.connect(_on_freeze_effect_ended)
+	add_child(_freeze_effect_timer)
 
 
 ## Increments the max enemy count by 1 every escalation interval.
@@ -61,6 +73,7 @@ func stop_spawning() -> void:
 	is_active = false
 	_spawn_timer.stop()
 	_escalation_timer.stop()
+	_end_freeze()
 	_clear_all_enemies()
 
 
@@ -73,6 +86,9 @@ func _on_spawn_timer() -> void:
 
 	var enemy := ChordEnemy.new()
 	enemy.setup(circle_center, circle_radius)
+	## If a freeze is currently active, the new enemy spawns frozen too
+	if _is_freeze_active:
+		enemy.set_frozen(true)
 	add_child(enemy)
 
 
@@ -149,6 +165,30 @@ func set_difficulty(level: int) -> void:
 
 	if _spawn_timer:
 		_spawn_timer.wait_time = spawn_interval
+
+
+## Freezes all current enemies and starts the freeze effect timer.
+func freeze_all_enemies(duration: float) -> void:
+	_is_freeze_active = true
+	for child in get_children():
+		if child is ChordEnemy:
+			child.set_frozen(true)
+	_freeze_effect_timer.start(duration)
+
+
+## Called when the freeze effect timer expires.
+func _on_freeze_effect_ended() -> void:
+	_end_freeze()
+
+
+## Unfreezes all enemies and clears the freeze state.
+func _end_freeze() -> void:
+	_is_freeze_active = false
+	if _freeze_effect_timer:
+		_freeze_effect_timer.stop()
+	for child in get_children():
+		if child is ChordEnemy:
+			child.set_frozen(false)
 
 
 func refresh_layout() -> void:

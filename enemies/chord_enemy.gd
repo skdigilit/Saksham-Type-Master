@@ -27,6 +27,9 @@ var prev_position: Vector2 = Vector2.ZERO
 var has_entered_circle: bool = false
 var has_exited_circle: bool = false
 
+## When true the enemy stops moving and is tinted ice-blue.
+var is_frozen: bool = false
+
 ## The sprite used to render the enemy
 var _enemy_sprite: Sprite2D = null
 
@@ -84,6 +87,10 @@ func _process(delta: float) -> void:
 	if _total_distance <= 0.0:
 		return
 
+	## Skip movement while frozen — enemy stays in place
+	if is_frozen:
+		return
+
 	## Record position before moving so swept collision can test the full segment
 	prev_position = position
 
@@ -127,6 +134,13 @@ func _draw() -> void:
 	var hit_r: float = GameTheme.ENEMY_BG_RADIUS + GameTheme.GRID_CELL_SIZE.x * GameTheme.ENEMY_HIT_PADDING
 	draw_circle(Vector2.ZERO, hit_r, Color(1.0, 1.0, 0.0, 0.1))
 	draw_arc(Vector2.ZERO, hit_r, 0.0, TAU, 40, Color(1.0, 1.0, 0.0, 0.7), 1.5)
+
+
+## Freezes this enemy in place and tints its sprite ice-blue.
+func set_frozen(value: bool) -> void:
+	is_frozen = value
+	if _enemy_sprite:
+		_enemy_sprite.modulate = GameTheme.COLOR_ENEMY_FROZEN if is_frozen else GameTheme.COLOR_ENEMY
 
 
 ## Returns the world position of this enemy (for collision checks).

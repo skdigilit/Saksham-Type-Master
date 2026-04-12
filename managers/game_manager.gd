@@ -142,6 +142,10 @@ func _on_collectible_collected(total: int, collectible_type: CollectibleManager.
 			if hud:
 				hud.animate_life_gain(world_position, gained_life_index)
 				hud.update_lives(current_lives)
+	elif collectible_type == CollectibleManager.CollectibleType.FREEZE:
+		## Freeze all enemies for the configured duration
+		if enemy_spawner:
+			enemy_spawner.freeze_all_enemies(GameTheme.FREEZE_EFFECT_DURATION)
 	else:
 		score += SCORE_PER_COLLECT
 		if hud:
