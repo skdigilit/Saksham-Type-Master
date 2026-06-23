@@ -17,12 +17,28 @@ func _ready() -> void:
 ## How much each letter is randomly nudged left or right from its grid position,
 ## as a fraction of the cell width. 0.07 = up to 7% of the cell width in each direction.
 ## Increase for a messier, more handwritten look; set to 0 for a perfectly straight grid.
-const STAGGER_FRACTION_X: float = 0.07
+const STAGGER_FRACTION_X: float = 0.15
 
 ## How much each letter is randomly nudged up or down from its grid position,
 ## as a fraction of the cell height. Higher than X so the vertical scatter is more noticeable.
 ## Increase for more vertical randomness; set to 0 for perfectly level rows.
-const STAGGER_FRACTION_Y: float = 0.15
+const STAGGER_FRACTION_Y: float = 0.22
+
+
+## Clamps a stagger offset so the resulting cell center stays inside the circle.
+## Takes the unshifted cell center (from GridHelpers) and the proposed stagger.
+## Returns a (possibly shortened) stagger vector that keeps the letter within the circle boundary.
+func _clamp_stagger_inside_circle(cell_center: Vector2, stagger: Vector2) -> Vector2:
+	var final_center: Vector2 = cell_center + stagger
+	var to_center: Vector2 = final_center - GameTheme.CIRCLE_CENTER
+	## Leave room for roughly half a cell so the letter glyph doesn't poke outside
+	var margin: float = max(GameTheme.GRID_CELL_SIZE.x, GameTheme.GRID_CELL_SIZE.y) * 0.4
+	var max_dist: float = GameTheme.CIRCLE_RADIUS - margin
+	var dist: float = to_center.length()
+	if dist > max_dist and dist > 0.0:
+		var clamped_center: Vector2 = GameTheme.CIRCLE_CENTER + to_center.normalized() * max_dist
+		return clamped_center - cell_center
+	return stagger
 
 
 ## Creates LetterCell instances for every active cell in the virtual grid.
@@ -58,6 +74,7 @@ func _generate_grid() -> void:
 				GameTheme.GRID_CELL_SIZE.y * cell.stagger_ratio.y
 			)
 
+			stagger = _clamp_stagger_inside_circle(pos, stagger)
 			cell.position = pos - GameTheme.GRID_CELL_SIZE * 0.5 + stagger
 			add_child(cell)
 			row_cells[col] = cell
@@ -204,4 +221,5 @@ func refresh_layout() -> void:
 			GameTheme.GRID_CELL_SIZE.x * cell.stagger_ratio.x,
 			GameTheme.GRID_CELL_SIZE.y * cell.stagger_ratio.y
 		)
+		stagger = _clamp_stagger_inside_circle(cell_center, stagger)
 		cell.position = cell_center - GameTheme.GRID_CELL_SIZE * 0.5 + stagger

@@ -11,3 +11,10 @@ Added a new **freeze collectible** that pauses all enemies for a configurable du
 - `enemies/chord_enemy.gd` — `is_frozen` flag and `set_frozen()` method
 - `enemies/enemy_spawner.gd` — `freeze_all_enemies()`, `_end_freeze()`, freeze effect timer
 - `managers/game_manager.gd` — route freeze collectible to enemy spawner
+
+## 2025-04-12 — More Organic Letter Placement
+
+Increased stagger fractions from 7%/15% to 30%/35% so letters appear more randomly scattered instead of sitting in a rigid grid. Added `_clamp_stagger_inside_circle()` helper that shortens the stagger offset whenever a cell center would land outside the circle boundary (with a half-cell margin). Clamping is applied both at grid creation and on viewport resize.
+
+**Files changed:**
+- `grid/letter_grid.gd` — increased `STAGGER_FRACTION_X/Y`, added `_clamp_stagger_inside_circle()`, applied clamping in `_generate_grid()` and `refresh_layout()`
